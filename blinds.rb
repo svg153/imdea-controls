@@ -124,6 +124,9 @@ class Controls
       opts.on("-v", "--verbose") do |v|
         $loud = v
       end
+      opts.on("-h", "--help", "See this message") do
+        puts opts
+      end
     end.parse!(args)
 
     username ||= cfg['username']
