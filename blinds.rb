@@ -23,6 +23,7 @@ end
 
 class Controls
   URI = 'http://control.imdeasoftware.org/screenmate/ScreenMateChangeValuePage.aspx'
+  #URI = 'https://software.imdea.org/intranet/control/'
 
   IDS = {
     temperature_setting: '3884056589',
