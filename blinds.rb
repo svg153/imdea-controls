@@ -9,6 +9,18 @@ require 'yaml'
 
 $loud = false
 
+AUTHORS = ["@michael-emmi", "@svg153"]
+
+def getAuthors
+  str = "Authors: "
+  AUTHORS.each_with_index do |author, index|
+    str += author
+    (index == AUTHORS.size - 1) ? str += "." : str += ", "
+  end
+  return str
+end
+
+
 class Controls
   URI = 'http://control.imdeasoftware.org/screenmate/ScreenMateChangeValuePage.aspx'
 
@@ -123,6 +135,9 @@ class Controls
       end
       opts.on("-v", "--verbose") do |v|
         $loud = v
+      end
+      opts.on("-a", "--authors", "Show the authors list") do
+        puts getAuthors
       end
       opts.on("-h", "--help", "See this message") do
         puts opts
