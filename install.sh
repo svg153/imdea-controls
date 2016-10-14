@@ -12,6 +12,7 @@ MIN_RUBY_VERSION_STR="2.0.0"
 MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 1.9.2 -> 192
 
 
+declare -a programsToInstall=("ruby" "ruby-dev")
 declare -a arrayGemsDependencies=("nokogiri" "mechanize")
 
 #
@@ -39,6 +40,20 @@ msg() {
     echo -e "${color}"$msg: "$2""${reset_color}"
 }
 
+check_and_install_programs() {
+    msg i "Proceed to install programs..."
+    for programToInstall in "$@" ; do
+        programIsInstalled=$(which $programToInstall)
+        if [ "$programIsInstalled" == *"not found"* ] ; then
+            msg w "\t$programToInstall is not installed, so we proceed to install it..."
+            sudo apt-get install $programToInstal
+            msg i "\t$programToInstall is installed."
+        else
+            msg i "\t$programToInstall is already installed."
+        fi
+    done
+    msg i "All gems dependecies installed."
+}
 
 check_and_install_gems() {
     msg i "Proceed to install gems dependecies..."
@@ -72,6 +87,10 @@ main() {
     ruby_version_short="$(echo $ruby_version_long | awk '{print $2}')"
     ruby_version_num=${ruby_version_short:0:5}
     ruby_version_num_int=${ruby_version_num//.}
+
+    # Check if ruby is installed and install
+    check_and_install_programs ${programsToInstall[@]}
+    #check_and_install_programs $programsToInstall
 
     # Check ruby version
     if [ "$ruby_version_num_int" -lt "$MIN_RUBY_VERSION" ] ; then
