@@ -9,7 +9,7 @@ VERSION=1.9.4
 
 NAME=$0;
 MIN_RUBY_VERSION_STR="1.9.2"
-MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 1.9.2
+MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 1.9.2 -> 192
 
 
 declare -a arrayGemsDependencies=("nokogiri" "mechanize")
