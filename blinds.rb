@@ -22,25 +22,55 @@ end
 
 
 class Controls
-  URI = 'http://control.imdeasoftware.org/screenmate/ScreenMateChangeValuePage.aspx'
-  #URI = 'https://software.imdea.org/intranet/control/'
+  #URI_OLD = 'http://control.imdeasoftware.org/screenmate/ScreenMateChangeValuePage.aspx'
+  URI = 'https://software.imdea.org/intranet/control/'
 
   IDS = {
-    temperature_setting: '3884056589',
-    sunblind_control: '3884056587',
-    sunblind_setting: '3884056604',
-    door_light_control: '3884056590',
-    door_light_setting: '3884056581',
-    window_light_control: '3884056601',
-    window_light_setting: '3884056602'
+    open_door: 'open_door',
+    door_light: 'door_light',
+    window_light: 'window_light',
+    blind: 'blind',
+    climate_mode: 'climate_mode',
+    climate_control: 'climate_control',
+    fan_speed: 'fan_speed',
+    temp: 'temp'
+  }
+
+  IDStoCHECK = {
+    open_door: 'door_is_closed',
+    door_light: 'door_light',
+    door_light_control: 'door_light_control',
+    window_light: 'window_light',
+    window_light_control: 'window_light_control',
+    blind: 'blind',
+    climate_mode: 'climate_mode',
+    climate_control: 'climate_control',
+    fan_speed: 'fanspeed',
+    temp: 'temp'
+  }
+
+  IDStoCHECKExceptions = {
+    temp: 'temp_set',
+    open_door: 'window_is_closed'
   }
 
   DEFAULTS = {
-    sunblind: 0,
-    temperature: 24.5,
-    window_light: 0,
-    door_light: 0
+    door_light: 'OFF',
+    window_light: 'AUTO',
+    blind: '10',
+    climate_mode: 'OFF',
+    climate_control: 'FAN_ONLY',
+    fan_speed: '100',
+    temp: '25'
   }
+
+  def select_option(form, field_id, text)
+    value = nil
+    form.field_with(:id => field_id).options.each{|o| value = o if o.text == text }
+
+    raise ArgumentError, "No option with text '#{text}' in field '#{field_id}'" unless value
+    form.field_with(:id => field_id).value = value
+  end
 
   def initialize(username, password, room)
     @agent = Mechanize.new
@@ -50,58 +80,107 @@ class Controls
 
     # begin the session
     print "opening session... " if $loud
-    form = @agent.get(URI).form
+    home = @agent.get(URI)
+    title = home.title()
+    form = home.form
     puts "OK" if $loud && form
     abort "Could not open session." unless form
 
     # login
-    form.userName = @username
-    form.password = @password
-    print "logging in... " if $loud
-    form = @agent.submit(form, form.buttons_with(:name => /loginButton/).first).form
-    puts "OK" if $loud && form
-    abort "could not log in as #{@username}." unless form
+    form.user = @username
+    form.pass = @password
 
-    # choose the room
-    form.roomId = @room
-    print "selecting room... " if $loud
-    page = @agent.submit(form, form.buttons_with(:name => /lookUpRoomId/).first)
+    print "logging in #{title}... " if $loud
+    button = form.button_with(:value => "Log in")
+    page = @agent.submit(form, button)
     puts "OK" if $loud && page
-    abort "could not select room #{room}." unless page
+    abort "could not log in as #{@username}." unless page
+
   end
 
   private
 
-  def room_id
-    "PLANTA_#{@room / 100}-Despacho_#{@room % 100}"
+  def set_control_uri
+    URI+"set/"
   end
 
   def control(obj, val)
-    form = @agent.get(URI + "?objectIdRoot=#{room_id}&objectId=#{obj}").form
-    form.newValue = val
     print "setting controls... " if $loud
-    page = @agent.submit(form, form.buttons_with(:name => /saveButton/).first)
+    obj_control_set_uri = "#{set_control_uri}" + "#{@room}/#{obj}/#{val}"
+    page = @agent.get(obj_control_set_uri)
     puts "OK" if $loud && page
     abort "control command failed." unless page
     nil
   end
 
+  def get_json_control_state(room)
+    room_control_get_uri = URI+"get/" + "#{room}"
+    json = @agent.get(room_control_get_uri).body
+    return json
+  end
+
+  def get_control_state(room)
+    result = JSON.parse(get_json_control_state(room))
+    return result
+  end
+
+  def check_control(obj, val)
+    res = 0
+    result = get_control_state(@room)
+    obj_get = IDStoCHECK[:"#{obj}"]
+    obj_get_control = IDStoCHECK[:"#{obj}_control"]
+    val_get = result['data'][obj_get]
+    val_get_control = result['data'][obj_get_control]
+
+    # resArray = get_obj_control_state(result, obj);
+    # val_get = resArray[1][0]
+    # val_get_control = resArray[1][1]
+
+    # print "val=#{val}"; print "\n"
+    # print "val_get=#{val_get}"; print "\n"
+    # print "val_get_control=#{val_get_control}"; print "\n"
+
+    res = 1 if "#{val}" == "#{val_get}" || "#{val}" == "#{val_get_control}"
+    return res
+  end
+
+  def str_control_state(obj)
+    str = "\ncontrol : actual state\n"
+    str += "------------------------\n"
+    json = get_control_state(@room)
+    exceptions = ["ALL"]
+    IDStoCHECK.each do |objId, objGET|
+      if exceptions.include?("#{obj}") || "#{obj}"=="#{objId}"
+        val = json['data']["#{objGET}"]
+        str += "#{objId} : #{val} \n"
+        IDStoCHECKExceptions.each do |objIdE, objGETE|
+          if "#{objId}"=="#{objIdE}"
+            val = json['data']["#{objGETE}"]
+            str += "#{objGETE} : #{val} \n"
+          end
+        end
+      end
+    end
+    return str
+  end
+
+
   public
 
   def self.cmdline(args)
-    room = nil
-    blinds = nil
-    temp = nil
-    window = nil
-    door = nil
     username = nil
     password = nil
+    room = nil
+    blinds = nil
+    control, mode, fanSpeed, temp = nil
+    window, door = nil
+    objectState = nil
 
     cfg = {}
     ['.', Dir.home, Dir.pwd, File.dirname(__FILE__)].each do |path|
       cfgfile = File.join(path, '.blinds.yml')
       if File.exists? cfgfile then
-        # puts "Loading configuration file #{cfgfile}"
+        puts "loading configuration file #{cfgfile}"
         cfg = YAML::load_file(cfgfile)
         break
       end
@@ -121,18 +200,41 @@ class Controls
       opts.on("-b", "--blinds NUM", Integer, "Set the blinds to NUM") do |n|
         blinds = n
       end
+
+      controlOPS = [:ON, :OFF]
+      opts.on("-c", "--climate-control [CONTROL]", controlOPS, "Set the climate control to #{controlOPS}") do |n|
+        control = n if n
+        abort "Only can set the climate control to #{controlOPS} options" unless n
+      end
+
+      modeOPS = [:HEAT, :COOL, :FAN_ONLY]
+      opts.on("-m", "--climate-mode [MODE]", modeOPS, "Set the climate mode to #{modeOPS}") do |n|
+        mode = n if n
+        abort "Only can set the climate mode to #{modeOPS} options" unless n
+      end
+
+      fanSpeedOPS = [25, 50, 75, 100]
+      opts.on("-f", "--fan-speed SPEED", fanSpeedOPS, "Set the fan speed to #{fanSpeedOPS}") do |n|
+        fanSpeed = n
+      end
+
       opts.on("-t", "--temp TEMP", Float, "Set the TEMPerature") do |n|
         temp = n
       end
-      opts.on("-w", "--window LIGHT", Float, "Set the window LIGHT") do |n|
+      lightsOPS = [Integer, :OFF, :AUTO]
+      opts.on("-w", "--window LIGHT", lightsOPS, "Set the window LIGHT") do |n|
         window = n
       end
-      opts.on("-d", "--door LIGHT", Float, "Set the door LIGHT") do |n|
+      opts.on("-d", "--door LIGHT", lightsOPS, "Set the door LIGHT") do |n|
         door = n
       end
-      opts.on("-l", "--lights LIGHT", Float, "Set all the LIGHTS") do |n|
+      opts.on("-l", "--lights LIGHT", lightsOPS, "Set all the LIGHTS") do |n|
         window = n
         door = n
+      end
+      objects = IDS
+      opts.on("-s", "--state [OBJ]", objects, "See the actual OBJect control state") do |n|
+        objectState = n ? n : "ALL"
       end
       opts.on("-v", "--verbose") do |v|
         $loud = v
@@ -143,6 +245,11 @@ class Controls
       opts.on("-h", "--help", "See this message") do
         puts opts
       end
+      # not run
+      # rescue OptionParser::InvalidOption => e
+      #   puts e
+      #   puts opts
+      #   exit(1)
     end.parse!(args)
 
     username ||= cfg['username']
@@ -153,18 +260,36 @@ class Controls
     abort("Must specify a password.") unless password
     abort("Must specify a room number.") unless room
 
-    c = Controls.new(username, password, room) if blinds || temp || window || door
-    c.sunblind(blinds) if blinds
-    c.temperature(temp) if temp
-    c.window_light(window) if window
+    c = Controls.new(username, password, room) if blinds || mode || control || fanSpeed || temp || window || door || objectState
     c.door_light(door) if door
+    c.window_light(window) if window
+    c.blind(blinds) if blinds
+    c.climate_mode(mode) if mode
+    c.climate_control(control) if control
+    c.fan_speed(fanSpeed) if fanSpeed
+    c.temp(temp) if temp
+    c.state(objectState) if objectState
+
+
   end
 
-  [:sunblind, :temperature, :window_light, :door_light].each do |x|
+
+  def state(obj)
+    str = str_control_state(obj)
+    puts str
+  end
+
+
+  options = [:open_door, :door_light, :window_light, :blind, :climate_mode, :climate_control, :fan_speed, :temp]
+  options.each do |x|
     define_method(x) do |val|
       val ||= DEFAULTS[x]
-      control( IDS[:"#{x}_setting"], val )
-      puts "#{x.to_s.gsub(/_/,' ')} set to #{val}"
+      obj = IDS[:"#{x}"]
+      print "#{x.to_s.gsub(/_/,' ')} setting to #{val}... "
+      control(obj, val)
+      sleep(1)
+      done = check_control(obj, val)
+      puts done==1 ? "OK" : "ERROR"
     end
   end
 end
