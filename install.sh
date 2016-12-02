@@ -56,6 +56,27 @@ check_and_install_programs() {
     msg i "All gems dependecies installed."
 }
 
+check_and_install_gems() {
+    msg i "Proceed to install gems dependecies..."
+
+    list_gem_installed=$(gem list)
+    arrayGemsDependencies=$1
+
+    for gemToInstall in "${arrayGemsDependencies[@]}" ; do
+        gem_is_installed=$(echo $list_gem_installed | grep "$gemToInstall" | wc -l)
+        # check if there are trash with the same name in files folder
+        if [[ $gem_is_installed -eq 0 ]] ; then
+            # gem not installed
+            msg i "\tgem $gemToInstall: not installed, so we proceed to install..."
+            sudo gem install "$gemToInstall"
+        else
+            msg i "\tgem $gemToInstall: already installed."
+        fi
+    done
+    msg i "All gems dependecies installed."
+}
+
+
 #
 # <- FUNCTIONS
 #

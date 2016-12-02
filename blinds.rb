@@ -2,10 +2,12 @@
 #!/usr/bin/ruby
 #!/usr/local/bin/ruby
 
-require 'rubygems'
 require 'mechanize'
+require 'nokogiri'
+require 'rubygems'
 require 'optparse'
 require 'yaml'
+require 'json'
 
 $loud = false
 
@@ -26,7 +28,7 @@ class Controls
   URI = 'https://software.imdea.org/intranet/control/'
 
   IDS = {
-    open_door: 'open_door',
+    open_door: 'door_open', # id to open the door ...control/set/IDROOM/door_open/0
     door_light: 'door_light',
     window_light: 'window_light',
     blind: 'blind',
@@ -172,6 +174,7 @@ class Controls
     password = nil
     room = nil
     blinds = nil
+    open_door = nil
     control, mode, fanSpeed, temp = nil
     window, door = nil
     objectState = nil
@@ -224,6 +227,9 @@ class Controls
         # @TODO: The check dont work, always print ERROR.
         temp = n
       end
+      opts.on("-o", "--open", "Open the door") do
+        open_door = 0
+      end
       lightsOPS = [Integer, :OFF, :AUTO]
       opts.on("-w", "--window LIGHT", lightsOPS, "Set the window LIGHT") do |n|
         window = n
@@ -270,7 +276,7 @@ class Controls
     abort("Must specify a password.") unless password
     abort("Must specify a room number.") unless room
 
-    c = Controls.new(username, password, room) if blinds || mode || control || fanSpeed || temp || window || door || objectState
+    c = Controls.new(username, password, room) if blinds || mode || control || fanSpeed || temp || window || door || open_door || objectState
     c.door_light(door) if door
     c.window_light(window) if window
     c.blind(blinds) if blinds
@@ -278,6 +284,7 @@ class Controls
     c.climate_control(control) if control
     c.fan_speed(fanSpeed) if fanSpeed
     c.temp(temp) if temp
+    c.open_door(open_door) if open_door
     c.state(objectState) if objectState
 
 
