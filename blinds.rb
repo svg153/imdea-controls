@@ -186,7 +186,7 @@ class Controls
       end
     end
 
-    OptionParser.new do |opts|
+    opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: #{File.basename $0} [options]"
       opts.on("-u", "--username USERNAME", "Your USERNAME") do |n|
         username = n
@@ -213,12 +213,15 @@ class Controls
         abort "Only can set the climate mode to #{modeOPS} options" unless n
       end
 
+      #fanSpeedOPS = [25, 50, 75, 100].join(',')
       fanSpeedOPS = [25, 50, 75, 100]
       opts.on("-f", "--fan-speed SPEED", fanSpeedOPS, "Set the fan speed to #{fanSpeedOPS}") do |n|
+        # @TODO: fanSpeedOPS dont work to check the arg and dont send the var to imdea
         fanSpeed = n
       end
 
       opts.on("-t", "--temp TEMP", Float, "Set the TEMPerature") do |n|
+        # @TODO: The check dont work, always print ERROR.
         temp = n
       end
       lightsOPS = [Integer, :OFF, :AUTO]
@@ -247,10 +250,17 @@ class Controls
       end
       # not run
       # rescue OptionParser::InvalidOption => e
-      #   puts e
-      #   puts opts
-      #   exit(1)
-    end.parse!(args)
+    end
+
+    begin
+      opt_parser.parse!(args)
+    rescue OptionParser::MissingArgument, OptionParser::InvalidOption, OptionParser::InvalidArgument => err
+      $stderr.print "./blinds: #{err.message}\n"
+      abort opt_parser
+    end
+
+
+
 
     username ||= cfg['username']
     password ||= cfg['password']

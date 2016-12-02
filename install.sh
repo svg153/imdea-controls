@@ -1,19 +1,20 @@
 #!/bin/bash
 
-VERSION=1.9.4
+VERSION=2.0.0
 
 
 #
 # -> VARS
 #
 
+# info: http://gillesfabio.com/blog/2011/03/01/rvm-for-pythonistas-virtualenv-for-rubyists/
+
 NAME=$0;
 MIN_RUBY_VERSION_STR="2.0.0"
 MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 1.9.2 -> 192
 
 
-declare -a programsToInstall=("ruby" "ruby-dev")
-declare -a arrayGemsDependencies=("nokogiri" "mechanize")
+declare -a programsToInstall=("git" "ruby" "ruby-dev")
 
 #
 # <- VARS
@@ -55,27 +56,6 @@ check_and_install_programs() {
     msg i "All gems dependecies installed."
 }
 
-check_and_install_gems() {
-    msg i "Proceed to install gems dependecies..."
-
-    list_gem_installed=$(gem list)
-    arrayGemsDependencies=$1
-
-    for gemToInstall in "${arrayGemsDependencies[@]}" ; do
-        gem_is_installed=$(echo $list_gem_installed | grep "$gemToInstall" | wc -l)
-        # check if there are trash with the same name in files folder
-        if [[ $gem_is_installed -eq 0 ]] ; then
-            # gem not installed
-            msg i "\tgem $gemToInstall: not installed, so we proceed to install..."
-            sudo gem install "$gemToInstall"
-        else
-            msg i "\tgem $gemToInstall: already installed."
-        fi
-    done
-    msg i "All gems dependecies installed."
-}
-
-
 #
 # <- FUNCTIONS
 #
@@ -88,9 +68,10 @@ main() {
     ruby_version_num=${ruby_version_short:0:5}
     ruby_version_num_int=${ruby_version_num//.}
 
+
     # Check if ruby is installed and install
     check_and_install_programs ${programsToInstall[@]}
-    #check_and_install_programs $programsToInstall
+
 
     # Check ruby version
     if [ "$ruby_version_num_int" -lt "$MIN_RUBY_VERSION" ] ; then
@@ -100,9 +81,19 @@ main() {
     msg i "Your ruby version is correct... $ruby_version_num > $MIN_RUBY_VERSION_STR"
 
 
-    # install dependecies gems
-    check_and_install_gems $arrayGemsDependencies
+    # Create a virtual env with ruby 2.0.0 # install rvm
+    #   commands from http://gillesfabio.com/blog/2011/03/01/rvm-for-pythonistas-virtualenv-for-rubyists/
+    #   more info https://rvm.io/rvm/install
+    bash < <( curl http://rvm.beginrescueend.com/releases/rvm-install-head )
+    echo '[[ -s "$HOME/.rvm/scripts/rvm" ]] && . "$HOME/.rvm/scripts/rvm"' >> ~/.profile
+    source ~/.rvm/scripts/rvm
+    rvm use 2.0.0@imdea-controls --create
 
+    # Install dependecies gems
+    gem install bundler
+    bundle install
+
+    # End
     msg i "All installation finish."
     msg i "Proceed to launch blinds help. './blinds.rb -h'"
     # show help
