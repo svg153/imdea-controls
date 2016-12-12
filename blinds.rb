@@ -127,7 +127,7 @@ class Controls
   end
 
   def check_control(obj, val)
-    res = 0
+    res = 1 # 1 == FAIL
     result = get_control_state(@room)
     obj_get = IDStoCHECK[:"#{obj}"]
     obj_get_control = IDStoCHECK[:"#{obj}_control"]
@@ -142,7 +142,7 @@ class Controls
     # print "val_get=#{val_get}"; print "\n"
     # print "val_get_control=#{val_get_control}"; print "\n"
 
-    res = 1 if "#{val}" == "#{val_get}" || "#{val}" == "#{val_get_control}"
+    res = 0 if "#{val}" == "#{val_get}" || "#{val}" == "#{val_get_control}"
     return res
   end
 
@@ -250,12 +250,12 @@ class Controls
       end
       opts.on("-a", "--authors", "Show the authors list") do
         puts getAuthors
+        # @TODO: Exit
       end
       opts.on("-h", "--help", "See this message") do
         puts opts
+        # @TODO: Exit
       end
-      # not run
-      # rescue OptionParser::InvalidOption => e
     end
 
     begin
@@ -296,7 +296,7 @@ class Controls
     puts str
   end
 
-
+  exit_value = 0 # 0 == OK
   options = [:open_door, :door_light, :window_light, :blind, :climate_mode, :climate_control, :fan_speed, :temp]
   options.each do |x|
     define_method(x) do |val|
@@ -306,7 +306,8 @@ class Controls
       control(obj, val)
       sleep(1)
       done = check_control(obj, val)
-      puts done==1 ? "OK" : "ERROR"
+      puts done==0 ? "OK" : "ERROR"
+      exit_value = exit_value==1 ? exit_value : done
     end
   end
 end
