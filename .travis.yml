@@ -1,3 +1,14 @@
 sudo: required
 
-script: ./install.sh
+language: ruby
+rvm:
+  - 2.0.0-p247
+gemfile:
+  - Gemfile
+
+# script: ./install.sh
+
+after_install:
+  - ./blinds.rb -h
+  - ./blinds.rb -a
+  - ./blinds.rb -o
