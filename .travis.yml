@@ -11,7 +11,7 @@ gemfile:
 
 # script: ./install.sh
 
-after_install:
-  - ./blinds.rb -h
-  - ./blinds.rb -a
-  - ./blinds.rb -o
+#after_install:
+#  - ./blinds.rb -h
+#  - ./blinds.rb -a
+#  - ./blinds.rb -o
