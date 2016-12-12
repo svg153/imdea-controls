@@ -3,6 +3,9 @@ sudo: required
 language: ruby
 rvm:
   - 2.0.0-p247
+before_install:
+  - gem install rake
+  - gem install bundler --pre
 gemfile:
   - Gemfile
 
