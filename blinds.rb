@@ -272,6 +272,10 @@ class Controls
     password ||= cfg['password']
     room ||= cfg['room_no'].to_i
 
+    username ||= ENV['IMDEA_USERNAME'] unless username
+    password ||= ENV['IMDEA_PASSWORD'] unless password
+    room = ENV['IMDEA_ROOM'] if room==0
+
     abort("Must specify a username.") unless username
     abort("Must specify a password.") unless password
     abort("Must specify a room number.") unless room
