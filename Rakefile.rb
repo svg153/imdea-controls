@@ -31,13 +31,20 @@ task :open do
   ruby "./blinds.rb -o"
 end
 
-task :climate_control, [:control] do |t, args|
-  args.with_defaults(:conrol => "ON")
-  ruby "./blinds.rb -c #{args.control}"
+# TODO: in one
+# task :climate_control, [:control] do |t, args|
+#   args.with_defaults(:conrol => "ON")
+#   ruby "./blinds.rb -c #{args.control}"
+# end
+task :climate_control_on, do
+  ruby "./blinds.rb -c ON"
+end
+task :climate_control_off, do
+  ruby "./blinds.rb -c OFF"
 end
 
 desc "Common task"
-task :all => [ :help, :open, :climate_control ]
+task :all => [ :help, :open, :climate_control_on, :climate_control_off ]
 Rake::Task["all"].invoke
 
 # task default: %w[test]
