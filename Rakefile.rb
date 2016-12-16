@@ -27,9 +27,9 @@ task :help do
   ruby "./blinds.rb -h"
 end
 
-# task :open do
-#   ruby "./blinds.rb -o"
-# end
+task :open do
+  ruby "./blinds.rb -o"
+end
 
 task :climate_control, [:control] do |t, args|
   args.with_defaults(:conrol => "ON")
@@ -37,7 +37,7 @@ task :climate_control, [:control] do |t, args|
 end
 
 desc "Common task"
-task :all => [ :help, :open ]
+task :all => [ :help, :open, :climate_control ]
 Rake::Task["all"].invoke
 
 # task default: %w[test]
