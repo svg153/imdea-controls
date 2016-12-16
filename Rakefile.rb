@@ -45,6 +45,6 @@ end
 
 desc "Common task"
 task :all => [ :help, :open, :climate_control_on, :climate_control_off ]
-Rake::Task["all"].invoke
+#Rake::Task["all"].invoke
 
-# task default: %w[test]
+task default: %w[test]
