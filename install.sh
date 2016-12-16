@@ -11,6 +11,7 @@ VERSION=2.5.0
 # info: http://gillesfabio.com/blog/2011/03/01/rvm-for-pythonistas-virtualenv-for-rubyists/
 
 NAME=$0;
+FILENAME=$(basename $NAME)
 MIN_RUBY_VERSION_STR="2.0.0"
 MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 2.0.0 -> 200
 
@@ -60,7 +61,6 @@ check_and_install_programs() {
     msg i "All gems dependecies installed."
 }
 
-
 add_rvm_to_rcs() {
     for shell_i in "$@" ; do
         # include $shell_I rc if it exists
@@ -90,13 +90,28 @@ make_ruby_vm() {
 }
 
 make_alias() {
-    ALIAS=$ALIAS_DEFAULT
-    blinds_path=$(pwd)"/blinds.rb"
-    [ $# -gt 0 ] && ALIAS=$1
-    msg_alias="alias "$ALIAS"=\""$blinds_path" \$@\""
+    blinds_path=$(pwd)"/"$FILENAME
+    msg_alias="alias "$1"=\""$blinds_path" \$@\""
     echo $msg_alias >> ~/.aliases
 }
 
+print_usage() {
+    echo "Usage: install.sh [OPTIONS]"
+    echo
+    echo "OPTIONS:"
+    echo "  -a'<alias>'                     normal install with the alias passed"
+    echo "  --alias='<alias>'               normal install with the alias passed"
+    echo "  -h, --help                      print this message and exit"
+    echo
+    echo "EXAMPLE:"
+    echo "  · With default alias:"
+    echo "      $ ./install.sh"
+    echo "  · With other alias:"
+    echo "      $ ./install.sh -a'imdea-controls-alias'"
+    echo "      $ ./install.sh -a 'imdea-controls-alias'"
+    echo "      $ ./install.sh --alias='imdea-controls-alias'"
+    echo "      $ ./install.sh --alias 'imdea-controls-alias'"
+}
 
 #
 # <- FUNCTIONS
@@ -105,6 +120,26 @@ make_alias() {
 
 
 main() {
+
+    ALIAS=$ALIAS_DEFAULT
+
+
+    # args
+    TEMP=$(getopt -o ha: -l help,alias: -- "$@")
+    if [ $? != 0 ] ; then
+        return
+    fi
+    eval set -- "$TEMP"
+    while true ; do
+        case $1 in
+            -h|--help ) print_usage ; exit 0 ;;
+            -a|--alias ) ALIAS=$2 ; break ;;
+            --) shift ;  break ;;
+            *) break ;;
+        esac
+    done
+
+
     # Check if ruby is installed and install
     check_and_install_programs ${programsToInstall[@]}
 
@@ -123,12 +158,15 @@ main() {
         msg i "Your ruby version is correct... $ruby_version_num == $MIN_RUBY_VERSION_STR"
     fi
 
+
     # Install dependecies gems
     gem install bundler
     bundle install
 
+
     # to .aliases
     make_alias $1
+
 
     # End
     msg i "All installation finish."
