@@ -33,7 +33,7 @@ end
 
 task :climate_control, [:control] do |t, args|
   args.with_defaults(:conrol => "ON")
-  ruby "./blinds.rb -c #{args.first_args}"
+  ruby "./blinds.rb -c #{args.control}"
 end
 
 desc "Common task"
