@@ -36,10 +36,10 @@ end
 #   args.with_defaults(:conrol => "ON")
 #   ruby "./blinds.rb -c #{args.control}"
 # end
-task :climate_control_on, do
+task :climate_control_on do
   ruby "./blinds.rb -c ON"
 end
-task :climate_control_off, do
+task :climate_control_off do
   ruby "./blinds.rb -c OFF"
 end
 
