@@ -3,17 +3,6 @@
 VERSION=2.5.0
 
 
-#
-# -> VARS TO CHANGE
-#
-
-ALIAS="blinds"
-
-#
-# -> VARS TO CHANGE
-#
-
-
 
 #
 # -> VARS
@@ -28,6 +17,8 @@ MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 2.0.0 -> 200
 
 declare -a programsToInstall=("git" "ruby" "ruby-dev")
 declare -a shellsToCheck=("bash" "zsh")
+
+ALIAS_DEFAULT="blinds"
 
 #
 # <- VARS
@@ -98,6 +89,14 @@ make_ruby_vm() {
     cd $pw
 }
 
+make_alias() {
+    ALIAS=$ALIAS_DEFAULT
+    blinds_path=$(pwd)"/blinds.rb"
+    [ $# -gt 0 ] && ALIAS=$1
+    msg_alias="alias "$ALIAS"=\""$blinds_path" \$@\""
+    echo $msg_alias >> ~/.aliases
+}
+
 
 #
 # <- FUNCTIONS
@@ -129,9 +128,7 @@ main() {
     bundle install
 
     # to .aliases
-    blinds_path=$(pwd)"/blinds.rb"
-    msg_alias="alias "$ALIAS"=\""$blinds_path" \$@\""
-    echo $msg_alias >> ~/.aliases
+    make_alias $1
 
     # End
     msg i "All installation finish."
