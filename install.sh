@@ -1,6 +1,18 @@
 #!/bin/bash
 
-VERSION=2.0.0
+VERSION=2.5.0
+
+
+#
+# -> VARS TO CHANGE
+#
+
+ALIAS="blinds"
+
+#
+# -> VARS TO CHANGE
+#
+
 
 
 #
@@ -115,6 +127,11 @@ main() {
     # Install dependecies gems
     gem install bundler
     bundle install
+
+    # to .aliases
+    blinds_path=$(pwd)"/blinds.rb"
+    msg_alias="alias "$ALIAS"=\""$blinds_path" \$@\""
+    echo $msg_alias >> ~/.aliases
 
     # End
     msg i "All installation finish."
