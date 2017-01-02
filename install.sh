@@ -67,7 +67,7 @@ check_and_install_gems() {
         if [[ $gem_is_installed -eq 0 ]] ; then
             # gem not installed
             msg i "\tgem $gemToInstall: not installed, so we proceed to install..."
-            sudo gem install "$gemToInstall"
+            gem install "$gemToInstall"
         else
             msg i "\tgem $gemToInstall: already installed."
         fi
