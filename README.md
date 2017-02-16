@@ -1,3 +1,10 @@
+Notice :exclamation:
+====================
+Please note this repository has moved to [imdea-control-python].
+* The problem is [Mechanize] gem, because only works on **Ruby 2.0.0**. So, we decided to create [another script in python](https://github.com/scmanjarrez/imdea-control-python).
+
+
+
 imdea-controls
 ==============
 <p align="left">
