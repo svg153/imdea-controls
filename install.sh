@@ -1,19 +1,27 @@
 #!/bin/bash
 
-VERSION=1.9.4
+VERSION=2.5.0
+
 
 
 #
 # -> VARS
 #
 
+# info: http://gillesfabio.com/blog/2011/03/01/rvm-for-pythonistas-virtualenv-for-rubyists/
+
 NAME=$0;
+FILENAME=$(basename $NAME)
 MIN_RUBY_VERSION_STR="2.0.0"
-MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 1.9.2 -> 192
+MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 2.0.0 -> 200
 
 
-declare -a programsToInstall=("ruby" "ruby-dev")
-declare -a arrayGemsDependencies=("nokogiri" "mechanize")
+declare -a programsToInstall=("git" "ruby" "ruby-dev")
+declare -a programsToInstallVersion=("-" "2.0.0" "-") # FUTURE: check all the version
+declare -a shellsToCheck=("bash" "zsh")
+
+ALIAS_DEFAULT="blinds"
+BLINDS_NAMEFILE="blinds.rb"
 
 #
 # <- VARS
@@ -44,37 +52,72 @@ check_and_install_programs() {
     msg i "Proceed to install programs..."
     for programToInstall in "$@" ; do
         programIsInstalled=$(which $programToInstall)
-        if [ "$programIsInstalled" == *"not found"* ] ; then
+        if [[ "$programIsInstalled" == *"not found"* ]] ; then
             msg w "\t$programToInstall is not installed, so we proceed to install it..."
             sudo apt-get install $programToInstal
             msg i "\t$programToInstall is installed."
         else
             msg i "\t$programToInstall is already installed."
+
         fi
     done
     msg i "All gems dependecies installed."
 }
 
-check_and_install_gems() {
-    msg i "Proceed to install gems dependecies..."
-
-    list_gem_installed=$(gem list)
-    arrayGemsDependencies=$1
-
-    for gemToInstall in "${arrayGemsDependencies[@]}" ; do
-        gem_is_installed=$(echo $list_gem_installed | grep "$gemToInstall" | wc -l)
-        # check if there are trash with the same name in files folder
-        if [[ $gem_is_installed -eq 0 ]] ; then
-            # gem not installed
-            msg i "\tgem $gemToInstall: not installed, so we proceed to install..."
-            sudo gem install "$gemToInstall"
-        else
-            msg i "\tgem $gemToInstall: already installed."
+add_rvm_to_rcs() {
+    for shell_i in "$@" ; do
+        # include $shell_I rc if it exists
+        RC="."$shell_i"rc"
+        PWDRC="$HOME/$RC"
+        RVMLINE='[[ -s "$HOME/.rvm/scripts/rvm" ]] && source "$HOME/.rvm/scripts/rvm" # Load RVM into a shell session *as a function*'
+        if [ -f $PWDRC ]; then
+            if ! grep -Fxq "$RVMLINE" $PWDRC ; then
+                echo $RVMLINE >> $PWDRC
+            fi
         fi
     done
-    msg i "All gems dependecies installed."
 }
 
+make_ruby_vm() {
+    # Create a virtual env with ruby 2.0.0
+    # install rvm for manage the ruby version
+    #   commands from http://gillesfabio.com/blog/2011/03/01/rvm-for-pythonistas-virtualenv-for-rubyists/
+    #   more info https://rvm.io/rvm/install
+    bash < <( curl http://rvm.beginrescueend.com/releases/rvm-install-head )
+    add_rvm_to_rcs ${shellsToCheck[@]}
+    source ~/.rvm/scripts/rvm
+    pw=$PWD
+    cd ..
+    rvm use 2.0.0@imdea-controls --create
+    cd $pw
+}
+
+make_alias() {
+    blinds_path=$(pwd)"/"$BLINDS_NAMEFILE
+    msg_alias="alias "$1"=\""$blinds_path" \$@\""
+    lines=$(cat ~/.aliases | grep "$BLINDS_NAMEFILE" | wc -l)
+    if [ $lines -eq 0 ] ; then
+        echo $msg_alias >> ~/.aliases
+    fi
+}
+
+print_usage() {
+    echo "Usage: install.sh [OPTIONS]"
+    echo
+    echo "OPTIONS:"
+    echo "  -a'<alias>'                     normal install with the alias passed"
+    echo "  --alias='<alias>'               normal install with the alias passed"
+    echo "  -h, --help                      print this message and exit"
+    echo
+    echo "EXAMPLE:"
+    echo "  · With default alias:"
+    echo "      $ ./install.sh"
+    echo "  · With other alias:"
+    echo "      $ ./install.sh -a'imdea-controls-alias'"
+    echo "      $ ./install.sh -a 'imdea-controls-alias'"
+    echo "      $ ./install.sh --alias='imdea-controls-alias'"
+    echo "      $ ./install.sh --alias 'imdea-controls-alias'"
+}
 
 #
 # <- FUNCTIONS
@@ -83,26 +126,55 @@ check_and_install_gems() {
 
 
 main() {
-    ruby_version_long=$(ruby --version)
-    ruby_version_short="$(echo $ruby_version_long | awk '{print $2}')"
-    ruby_version_num=${ruby_version_short:0:5}
-    ruby_version_num_int=${ruby_version_num//.}
+
+    ALIAS=$ALIAS_DEFAULT
+
+
+    # args
+    TEMP=$(getopt -o ha: -l help,alias: -- "$@")
+    if [ $? != 0 ] ; then
+        return
+    fi
+    eval set -- "$TEMP"
+    while true ; do
+        case $1 in
+            -h|--help ) print_usage ; exit 0 ;;
+            -a|--alias ) ALIAS=$2 ; break ;;
+            --) shift ;  break ;;
+            *) break ;;
+        esac
+    done
+
 
     # Check if ruby is installed and install
     check_and_install_programs ${programsToInstall[@]}
-    #check_and_install_programs $programsToInstall
+
 
     # Check ruby version
-    if [ "$ruby_version_num_int" -lt "$MIN_RUBY_VERSION" ] ; then
-        msg e "Your ruby version is les than the minimun required... yours=$ruby_version_num < min=$MIN_RUBY_VERSION_STR."
-        exit 1
+    ruby_version_long=$(ruby --version)
+    ruby_version_short="$(echo $ruby_version_long | awk '{print $2}')"
+    ruby_version_num=${ruby_version_short:0:5}
+    ruby_version_num_int=${ruby_version_num//.} # Example: 2.1.5 -> 215
+
+    if [ "$ruby_version_num_int" -ne "$MIN_RUBY_VERSION" ] ; then
+        msg w "Your ruby version is not the version required... yours=$ruby_version_num != min=$MIN_RUBY_VERSION_STR."
+        msg i "We have to make a virtual env and install rvm for manage the ruby version."
+        make_ruby_vm
+    else
+        msg i "Your ruby version is correct... $ruby_version_num == $MIN_RUBY_VERSION_STR"
     fi
-    msg i "Your ruby version is correct... $ruby_version_num > $MIN_RUBY_VERSION_STR"
 
 
-    # install dependecies gems
-    check_and_install_gems $arrayGemsDependencies
+    # Install dependecies gems
+    gem install bundler
+    bundle install
 
+
+    # to .aliases
+    make_alias $ALIAS
+
+
+    # End
     msg i "All installation finish."
     msg i "Proceed to launch blinds help. './blinds.rb -h'"
     # show help

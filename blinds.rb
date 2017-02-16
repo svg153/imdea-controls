@@ -2,10 +2,12 @@
 #!/usr/bin/ruby
 #!/usr/local/bin/ruby
 
-require 'rubygems'
 require 'mechanize'
+require 'nokogiri'
+require 'rubygems'
 require 'optparse'
 require 'yaml'
+require 'json'
 
 $loud = false
 
@@ -26,7 +28,7 @@ class Controls
   URI = 'https://software.imdea.org/intranet/control/'
 
   IDS = {
-    open_door: 'open_door',
+    open_door: 'door_open', # id to open the door ...control/set/IDROOM/door_open/0
     door_light: 'door_light',
     window_light: 'window_light',
     blind: 'blind',
@@ -58,8 +60,8 @@ class Controls
     door_light: 'OFF',
     window_light: 'AUTO',
     blind: '10',
-    climate_mode: 'OFF',
-    climate_control: 'FAN_ONLY',
+    climate_mode: 'FAN_ONLY',
+    climate_control: 'OFF',
     fan_speed: '100',
     temp: '25'
   }
@@ -125,7 +127,7 @@ class Controls
   end
 
   def check_control(obj, val)
-    res = 0
+    res = 1 # 1 == FAIL
     result = get_control_state(@room)
     obj_get = IDStoCHECK[:"#{obj}"]
     obj_get_control = IDStoCHECK[:"#{obj}_control"]
@@ -140,7 +142,7 @@ class Controls
     # print "val_get=#{val_get}"; print "\n"
     # print "val_get_control=#{val_get_control}"; print "\n"
 
-    res = 1 if "#{val}" == "#{val_get}" || "#{val}" == "#{val_get_control}"
+    res = 0 if "#{val}" == "#{val_get}" || "#{val}" == "#{val_get_control}"
     return res
   end
 
@@ -172,6 +174,7 @@ class Controls
     password = nil
     room = nil
     blinds = nil
+    open_door = nil
     control, mode, fanSpeed, temp = nil
     window, door = nil
     objectState = nil
@@ -186,7 +189,7 @@ class Controls
       end
     end
 
-    OptionParser.new do |opts|
+    opt_parser = OptionParser.new do |opts|
       opts.banner = "Usage: #{File.basename $0} [options]"
       opts.on("-u", "--username USERNAME", "Your USERNAME") do |n|
         username = n
@@ -213,13 +216,19 @@ class Controls
         abort "Only can set the climate mode to #{modeOPS} options" unless n
       end
 
+      #fanSpeedOPS = [25, 50, 75, 100].join(',')
       fanSpeedOPS = [25, 50, 75, 100]
       opts.on("-f", "--fan-speed SPEED", fanSpeedOPS, "Set the fan speed to #{fanSpeedOPS}") do |n|
+        # @TODO: fanSpeedOPS dont work to check the arg and dont send the var to imdea
         fanSpeed = n
       end
 
       opts.on("-t", "--temp TEMP", Float, "Set the TEMPerature") do |n|
+        # @TODO: The check dont work, always print ERROR.
         temp = n
+      end
+      opts.on("-o", "--open", "Open the door") do
+        open_door = 0
       end
       lightsOPS = [Integer, :OFF, :AUTO]
       opts.on("-w", "--window LIGHT", lightsOPS, "Set the window LIGHT") do |n|
@@ -241,26 +250,37 @@ class Controls
       end
       opts.on("-a", "--authors", "Show the authors list") do
         puts getAuthors
+        # @TODO: Exit
       end
       opts.on("-h", "--help", "See this message") do
         puts opts
+        # @TODO: Exit
       end
-      # not run
-      # rescue OptionParser::InvalidOption => e
-      #   puts e
-      #   puts opts
-      #   exit(1)
-    end.parse!(args)
+    end
+
+    begin
+      opt_parser.parse!(args)
+    rescue OptionParser::MissingArgument, OptionParser::InvalidOption, OptionParser::InvalidArgument => err
+      $stderr.print "./blinds: #{err.message}\n"
+      abort opt_parser
+    end
+
+
+
 
     username ||= cfg['username']
     password ||= cfg['password']
     room ||= cfg['room_no'].to_i
 
+    username ||= ENV['IMDEA_USERNAME'] unless username
+    password ||= ENV['IMDEA_PASSWORD'] unless password
+    room = ENV['IMDEA_ROOM'] if room==0
+
     abort("Must specify a username.") unless username
     abort("Must specify a password.") unless password
     abort("Must specify a room number.") unless room
 
-    c = Controls.new(username, password, room) if blinds || mode || control || fanSpeed || temp || window || door || objectState
+    c = Controls.new(username, password, room) if blinds || mode || control || fanSpeed || temp || window || door || open_door || objectState
     c.door_light(door) if door
     c.window_light(window) if window
     c.blind(blinds) if blinds
@@ -268,6 +288,7 @@ class Controls
     c.climate_control(control) if control
     c.fan_speed(fanSpeed) if fanSpeed
     c.temp(temp) if temp
+    c.open_door(open_door) if open_door
     c.state(objectState) if objectState
 
 
@@ -279,7 +300,7 @@ class Controls
     puts str
   end
 
-
+  exit_value = 0 # 0 == OK
   options = [:open_door, :door_light, :window_light, :blind, :climate_mode, :climate_control, :fan_speed, :temp]
   options.each do |x|
     define_method(x) do |val|
@@ -289,7 +310,8 @@ class Controls
       control(obj, val)
       sleep(1)
       done = check_control(obj, val)
-      puts done==1 ? "OK" : "ERROR"
+      puts done==0 ? "OK" : "ERROR"
+      exit_value = exit_value==1 ? exit_value : done
     end
   end
 end
