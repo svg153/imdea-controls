@@ -2,26 +2,23 @@ imdea-controls
 ==============
 <p align="left">
     <a href="https://travis-ci.org/svg153/imdea-controls">
-        <img src="https://travis-ci.org/svg153/imdea-controls.svg?branch=dev"
-             alt="Travis CI">
+        <img src="https://travis-ci.org/svg153/imdea-controls.svg?branch=dev" alt="Travis CI">
     </a>
 </p>
 
-A script to control the room blinds, temperature, lights and door at the IMDEA Software Institute.
+A script to control the room blinds, temperature, lights and door at the [IMDEA Software Institute](http://www.software.imdea.org).
 
 
 Dependencies
 ------------
-
 You do not worry about this, only run 'install.sh' script.
 
-* Ruby 2.0.0 ONLY.
+* **Ruby 2.0.0 ONLY**.
 * Gems:
   * [Mechanize](http://mechanize.rubyforge.org/) gem.
     * This gem needed [Nokogiri](http://www.nokogiri.org/) gem.
   * [Rake](https://ruby.github.io/rake/) gem for testing.
-*
-* An office at the [IMDEA Software Institute](http://www.software.imdea.org) with an account.
+* An account and office at the [IMDEA Software Institute](http://www.software.imdea.org).
 
 
 Installation
@@ -38,7 +35,7 @@ $ cd imdea-controls
 ```shell
 $ chmod +x install.sh
 ```
-1. Run install script. This will create an alias in `~ / .aliases` to run the script in any location, so there are two install ways. ONLY RUN ONE OF THEM:
+1. Run install script. This will create an alias in `~/.aliases` to run the script in any location, so there are two install ways. **ONLY RUN ONE OF THEM**:
   * 1º way - Normal: The blinds.rb alias will be "blinds".
   ```shell
   $ ./install.sh
@@ -47,17 +44,17 @@ $ chmod +x install.sh
   ```shell
   $ ./install.sh -a'aliasForTheScriptBlinds'
   ```
-1. Create the configuration file, `.blinds.yml`.
+1. Create the configuration file, `.blinds.yml` from template.
 ```shell
-$ touch .blinds.yml
+$ cp .blinds.yml.template .blinds.yml
 ```
-1. Copy this inside the `.blinds.yml` with your IMDEA Software information.
+1. Edit the `.blinds.yml` with your IMDEA Software information.
 ```yml
 username: USERNAME
 password: PASSWORD
 room_no: ROOM
 ```
-1. By deffault, `install.sh` saw you the help. But to see the help, type this.
+1. By default, `install.sh` saw you the help. But to see the help, type this.
 ```shell
 $ ./blinds.rb -h
 ```
@@ -89,9 +86,7 @@ Usage: blinds.rb [options]
 Configuration file
 ------------------
 
-`blinds.rb` looks for `.blinds.yml` in your home directory `~` and your current
-directory `.`.  If `.blinds.yml` exists, `blinds.rb` will read your `USERNAME`,
-`PASSWORD`, and `ROOM`.  `.blinds.yml` has the following format:
+`blinds.rb` looks for `.blinds.yml` in your home directory `~` and your current directory `.`.  If `.blinds.yml` exists, `blinds.rb` will read your `USERNAME`, `PASSWORD`, and `ROOM`.  `.blinds.yml` has the following format:
 
 ```yml
 username: USERNAME
