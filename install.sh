@@ -17,9 +17,11 @@ MIN_RUBY_VERSION="${MIN_RUBY_VERSION_STR//.}" # 2.0.0 -> 200
 
 
 declare -a programsToInstall=("git" "ruby" "ruby-dev")
+declare -a programsToInstallVersion=("-" "2.0.0" "-") # FUTURE: check all the version
 declare -a shellsToCheck=("bash" "zsh")
 
 ALIAS_DEFAULT="blinds"
+BLINDS_NAMEFILE="blinds.rb"
 
 #
 # <- VARS
@@ -50,12 +52,13 @@ check_and_install_programs() {
     msg i "Proceed to install programs..."
     for programToInstall in "$@" ; do
         programIsInstalled=$(which $programToInstall)
-        if [ "$programIsInstalled" == *"not found"* ] ; then
+        if [[ "$programIsInstalled" == *"not found"* ]] ; then
             msg w "\t$programToInstall is not installed, so we proceed to install it..."
             sudo apt-get install $programToInstal
             msg i "\t$programToInstall is installed."
         else
             msg i "\t$programToInstall is already installed."
+
         fi
     done
     msg i "All gems dependecies installed."
@@ -90,9 +93,12 @@ make_ruby_vm() {
 }
 
 make_alias() {
-    blinds_path=$(pwd)"/"$FILENAME
+    blinds_path=$(pwd)"/"$BLINDS_NAMEFILE
     msg_alias="alias "$1"=\""$blinds_path" \$@\""
-    echo $msg_alias >> ~/.aliases
+    lines=$(cat ~/.aliases | grep "$BLINDS_NAMEFILE" | wc -l)
+    if [ $lines -eq 0 ] ; then
+        echo $msg_alias >> ~/.aliases
+    fi
 }
 
 print_usage() {
@@ -144,12 +150,12 @@ main() {
     check_and_install_programs ${programsToInstall[@]}
 
 
+    # Check ruby version
     ruby_version_long=$(ruby --version)
     ruby_version_short="$(echo $ruby_version_long | awk '{print $2}')"
     ruby_version_num=${ruby_version_short:0:5}
     ruby_version_num_int=${ruby_version_num//.} # Example: 2.1.5 -> 215
 
-    # Check ruby version
     if [ "$ruby_version_num_int" -ne "$MIN_RUBY_VERSION" ] ; then
         msg w "Your ruby version is not the version required... yours=$ruby_version_num != min=$MIN_RUBY_VERSION_STR."
         msg i "We have to make a virtual env and install rvm for manage the ruby version."
@@ -165,7 +171,7 @@ main() {
 
 
     # to .aliases
-    make_alias $1
+    make_alias $ALIAS
 
 
     # End
