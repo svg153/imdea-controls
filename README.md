@@ -6,7 +6,7 @@ imdea-controls
     </a>
 </p>
 
-A script to control the room blinds, temperature, lights and door at the [IMDEA Software Institute](http://www.software.imdea.org).
+A script to control the room blinds, temperature, lights and door at the [IMDEA Software Institute].
 
 
 Dependencies
@@ -15,10 +15,10 @@ You do not worry about this, only run 'install.sh' script.
 
 * **Ruby 2.0.0 ONLY**.
 * Gems:
-  * [Mechanize](http://mechanize.rubyforge.org/) gem.
-    * This gem needed [Nokogiri](http://www.nokogiri.org/) gem.
-  * [Rake](https://ruby.github.io/rake/) gem for testing.
-* An account and office at the [IMDEA Software Institute](http://www.software.imdea.org).
+  * [Mechanize] gem.
+    * This gem needed [Nokogiri] gem.
+  * [Rake] gem for testing.
+* An account and office at the [IMDEA Software Institute].
 
 
 Installation
@@ -98,3 +98,12 @@ Authors
 -------
 * [Michael Emmi](https://github.com/michael-emmi)
 * [Sergio Valverde](https://github.com/svg153)
+
+
+
+
+[Mechanize]:http://mechanize.rubyforge.org/
+[Nokogiri]:http://www.nokogiri.org/
+[Rake]:https://ruby.github.io/rake/
+[IMDEA Software Institute]:http://www.software.imdea.org
+[imdea-control-python]:https://github.com/scmanjarrez/imdea-control-python
