@@ -60,8 +60,8 @@ class Controls
     door_light: 'OFF',
     window_light: 'AUTO',
     blind: '10',
-    climate_mode: 'OFF',
-    climate_control: 'FAN_ONLY',
+    climate_mode: 'FAN_ONLY',
+    climate_control: 'OFF',
     fan_speed: '100',
     temp: '25'
   }
